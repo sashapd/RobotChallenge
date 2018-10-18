@@ -8,13 +8,30 @@ using System.Threading.Tasks;
 
 namespace OleksandrPadko2.RobotChallange
 {
+    public delegate void RoleEventHandler(object sender, RoleEventArgs args);
+
+    public class RoleEventArgs
+    {
+        public RoleEventArgs(string role)
+        {
+            Role = role;
+        }
+
+        public string Role { get; }
+    }
+
     public class OleksandrPadkoAlgorithm : IRobotAlgorithm
     {
         int mCurrentRound = 0;
+        public static event RoleEventHandler onRoleChanged;
 
         public OleksandrPadkoAlgorithm()
         {
             Logger.OnLogRound += Logger_OnRound;
+            onRoleChanged += (sender, args) =>
+            {
+                Log("The role picked is " + args.Role);
+            };
         }
 
         void Logger_OnRound(object sender, LogRoundEventArgs a)
@@ -86,7 +103,6 @@ namespace OleksandrPadko2.RobotChallange
 
             foreach (var station in stations)
             {
-
                 for (int moves = 1; moves <= maxMoves; moves++)
                 {
                     Position step = robot.Position.Copy();
@@ -167,15 +183,14 @@ namespace OleksandrPadko2.RobotChallange
 
         public RobotCommand DoStep(IList<Robot.Common.Robot> robots, int robotToMoveIndex, Map map)
         {
-            //Logger.LogMessage(new Owner() { Name = Author, Algorithm = this }, "yo");
-            Log("bleat");
-
             if (isFarmer(robots[robotToMoveIndex], map))
             {
+                onRoleChanged.Invoke(this, new RoleEventArgs("Farmer"));
                 return DoStepFarmer(robots, robotToMoveIndex, map);
             }
             else
             {
+                onRoleChanged.Invoke(this, new RoleEventArgs("Hunter"));
                 return DoStepHunter(robots, robotToMoveIndex, map);
             }
         }
